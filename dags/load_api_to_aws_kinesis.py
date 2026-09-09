@@ -17,7 +17,7 @@ from airflow.operators.python import PythonOperator
 logger = logging.getLogger(__name__)
 
 API_BASE_URL = "https://jsonplaceholder.typicode.com"
-STREAM_NAME = "user-posts-data-stream"
+STREAM_NAME = "dea-airflow-user-post-data"
 MAX_USER_ID = 10
 
 
