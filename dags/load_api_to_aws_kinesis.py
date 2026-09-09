@@ -6,13 +6,8 @@ from datetime import datetime
 
 import boto3
 import requests
-from airflow import DAG
-from airflow.models import Variable
-
-# On Airflow 3 the canonical path is:
-#   from airflow.providers.standard.operators.python import PythonOperator
-# The line below still resolves via the compat shim; switch when you're ready.
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import DAG, Variable
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +19,14 @@ MAX_USER_ID = 10
 def _set_api_user_id(**context):
     """Advance the incremental userId cursor and return the new value."""
     try:
-        current = int(Variable.get("api_user_id", default_var=-1))
+        # Variable.get always returns a string; the SDK kwarg is `default`, not `default_var`.
+        current = int(Variable.get("api_user_id", default=-1))
         logger.info("current api_user_id:: %s", current)
 
         next_id = 1 if current in (-1, MAX_USER_ID) else current + 1
-        Variable.set(key="api_user_id", value=next_id)
+        # PutVariable in the Task SDK is strictly typed -- an int here raises
+        # a pydantic ValidationError, so cast before writing.
+        Variable.set(key="api_user_id", value=str(next_id))
 
         logger.info("api_user_id advanced to %s", next_id)
         return next_id
